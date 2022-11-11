@@ -158,10 +158,11 @@ const data = {
     ],
 };
 
-const pastEvents = []
 const upcomingEvents = []
+const pastEvents = []
 const categories = []
 const details = {}
+var Input = {input: '', seted: false}
 
 // Iterate the events and separate them into categories (pastEvents and upcomingEvents)
 // and add the categories of the events to the categories array if they are not already, with a boolean value
@@ -170,12 +171,23 @@ data.eventos.map(event => {
     categories.find(category => category.name == event.category) ? null : categories.push({name: event.category, checked: false})
 })
 
+// Functions of the Search input
+const searchInput = () => {
+    let searchContainer = document.querySelector('.name_search_input')
+
+    searchContainer.addEventListener('keyup', event => {
+        Input.input = event.target.value
+        event.target.value ? Input.seted = true : Input.seted = false
+        renderPage(true)
+    })//keyup - change
+}
+
 // Functions of the checkboxs ------------------------------------------------------------------------------------------------------------
 // Render of the checkboxs
 const categoryCheckbox = (category) => {
     return `<div class="category_search_checkbox_container">
                 <input class="category_search_checkbox" type="checkbox" name="category" id="${category.replace(' ','_')}" value="${category}">
-                <label for="">${category}</label>
+                <label for="${category.replace(' ','_')}">${category}</label>
             </div>`
 }
 
@@ -195,11 +207,10 @@ const checkboxListener = () => {
     
     checkboxs.forEach(checkbox => {
         checkbox.addEventListener('change', event => {
-            let checked = false
-            categories.find(category => category.name == event.target.value && category.checked == true) ? checked = true : checked = false
             categories.map(category => {
-                checked && category.name == event.target.value ? category.checked = false : null
-                !checked && category.name == event.target.value ? category.checked = true : null
+                if (category.name == event.target.value) {
+                    category.checked ? category.checked = false : category.checked = true
+                }
             })
             renderPage(true)
         })
@@ -219,8 +230,6 @@ const linksListener = () => {
     })
 }
 
-
-
 // Function of the cards -----------------------------------------------------------------------------------------------------------------
 // Render of the cards
 const card = (event,href) => {
@@ -234,7 +243,7 @@ const card = (event,href) => {
                     <div class="card_price_detail">
                         <p class="card_price">Price: $ ${event.price}</p>
                         <div class="card_button">
-                            <a href=${href} id="${event.name}" class="card_button_link" onclick="viewDetail(${event.name})" value="${event.name}">View Detail</a>
+                            <a href=${href} id="${event.name}" class="card_button_link" onclick="getDetails(${event.name})" value="${event.name}">View Detail</a>
                         </div>
                     </div>
                 </div>
@@ -247,37 +256,24 @@ const card = (event,href) => {
 const insertCard = (id,events,href) => {
     let cardContainer = document.querySelector(id)
     
-    let checked = categories.some(category => category.checked == true)
-    
-    if (!checked) {
-        removeChild(cardContainer)
-
-        events.map(event => {
-            cardContainer.insertAdjacentHTML("beforeend", card(event,href))
-        })
-    }
-    else {
-        removeChild(cardContainer)
-
-        categories.map(category => {
-            if (category.checked) {
-                for (let i = 0; i < events.length; i++) {
-                    category.name == events[i].category ? cardContainer.insertAdjacentHTML("beforeend", card(events[i],href)) : null
-                }
-            }
-        })
-        // Conditions for when there are no events
-        // if (!cardContainer.firstChild) {
-
-        // }
-    }
-    linksListener()
-}
-
-const removeChild = (cardContainer) => {
     while (cardContainer.firstChild) {
         cardContainer.removeChild(cardContainer.firstChild)
     }
+
+    let checkInput = event => {
+        let start = event.name.toLowerCase().startsWith(Input.input.toLowerCase())
+        if (!Input.seted || start) return cardContainer.insertAdjacentHTML("beforeend", card(event,href))
+    }
+    
+    let checked = categories.some(category => category.checked == true)
+
+    events.map(event => {
+        if (!checked) return checkInput(event)
+        categories.map(category => {
+            category.name == event.category && category.checked ? checkInput(event) : null
+        })
+    })
+    linksListener()
 }
 
 // Function to render the pages
@@ -287,9 +283,9 @@ const renderPage = (reRender) => {
     
     // Invoke the function to render the cards in the corresponding page
     switch (URLactual) {
-        case '': reRender ? null : renderCategories(),insertCard('#cards_container_home',data.eventos,'./pages/details.html'); break;
-        case 'index.html': reRender ? null : renderCategories(),insertCard('#cards_container_home',data.eventos,'./pages/details.html'); break;
-        case 'upcomingEvents.html': reRender ? null : renderCategories(),insertCard('#cards_container_upcoming',upcomingEvents,'../pages/details.html'); break;
+        case '': reRender ? null : renderCategories(), searchInput(), insertCard('#cards_container_home',data.eventos,'./pages/details.html'); break;
+        case 'index.html': reRender ? null : renderCategories(), searchInput(), insertCard('#cards_container_home',data.eventos,'./pages/details.html'); break;
+        case 'upcomingEvents.html': reRender ? null : renderCategories(), searchInput(), insertCard('#cards_container_upcoming',upcomingEvents,'../pages/details.html'); break;
         case 'pastEvents.html':reRender ? null :  renderCategories(),insertCard('#cards_container_past',pastEvents,'../pages/details.html'); break;
         case 'details.html': viewDetail();break;
     }
@@ -303,7 +299,6 @@ const getDetails = (name) => {
     })
 }
 
-//
 const viewDetail = () => {
     let detailContainer = document.getElementById('card_details')
     detailContainer.insertAdjacentHTML("beforeend", detailCard())
