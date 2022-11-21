@@ -161,8 +161,10 @@ const data = {
 const upcomingEvents = []
 const pastEvents = []
 const categories = []
-const details = {}
+var details = {}
 var Input = {input: '', seted: false}
+var actualEvents
+var actualHref
 
 // Iterate the events and separate them into categories (pastEvents and upcomingEvents)
 // and add the categories of the events to the categories array if they are not already, with a boolean value
@@ -171,15 +173,44 @@ data.eventos.map(event => {
     categories.find(category => category.name == event.category) ? null : categories.push({name: event.category, checked: false})
 })
 
-// Functions of the Search input
+// Functions of the Search input --------------------------------------------------------------------------------------------------------
 const searchInput = () => {
     let searchContainer = document.querySelector('.name_search_input')
 
     searchContainer.addEventListener('keyup', event => {
         Input.input = event.target.value
         event.target.value ? Input.seted = true : Input.seted = false
-        renderPage(true)
-    })//keyup - change
+        filterCards()
+    })
+}
+
+//Select all the checkboxs and wait for them to change to modified the boolean on the respective category -------------------------------
+const checkboxListener = () => {
+    let checkboxs = document.querySelectorAll('.category_search_checkbox')
+    
+    checkboxs.forEach(checkbox => {
+        checkbox.addEventListener('change', event => {
+            categories.map(category => {
+                if (category.name == event.target.value) {
+                    category.checked ? category.checked = false : category.checked = true
+                }
+            })
+            filterCards()
+        })
+    })
+}
+
+//Select the specified event and save it in the details array ---------------------------------------------------------------------------
+const linksListener = () => {
+    let links = document.querySelectorAll('.card_button_link')
+    
+    links.forEach(link => {
+        link.addEventListener('click', () => {
+            data.eventos.map(evento => {
+                evento.name == link.id ? localStorage.setItem('myEvent', JSON.stringify(evento)) : null //details = evento
+            })
+        })
+    })
 }
 
 // Functions of the checkboxs ------------------------------------------------------------------------------------------------------------
@@ -194,46 +225,17 @@ const categoryCheckbox = (category) => {
 // Function to render all the checkboxs
 const renderCategories = () => {
     let categoriesContainer = document.querySelector('.category_search')
-    
+
     categories.map(category => {
         categoriesContainer.insertAdjacentHTML("beforeend", categoryCheckbox(category.name))
     })
     checkboxListener()
 }
 
-//Select all the checkboxs and wait for them to change to modified the boolean on the respective category -------------------------------
-const checkboxListener = () => {
-    let checkboxs = document.querySelectorAll('.category_search_checkbox')
-    
-    checkboxs.forEach(checkbox => {
-        checkbox.addEventListener('change', event => {
-            categories.map(category => {
-                if (category.name == event.target.value) {
-                    category.checked ? category.checked = false : category.checked = true
-                }
-            })
-            renderPage(true)
-        })
-    })
-}
-
-//Select all the checkboxs and wait for them to change to modified the boolean on the respective category -------------------------------
-const linksListener = () => {
-    let links = document.querySelectorAll('.card_button_link')
-    
-    links.forEach(link => {
-        link.addEventListener('click', event => {
-            data.eventos.map(evento => {
-                evento.name == event.target.value ? details = evento : null
-            })
-        })
-    })
-}
-
 // Function of the cards -----------------------------------------------------------------------------------------------------------------
 // Render of the cards
 const card = (event,href) => {
-    return `<div class="card">
+    return `<div class="card" id="${event.name.replace(" ","_")}">
                 <img class="card-img-top card_img" src="${event.image}" alt="Card image cap">
                 <div class="card_body">
                     <div class="card_info">
@@ -243,72 +245,116 @@ const card = (event,href) => {
                     <div class="card_price_detail">
                         <p class="card_price">Price: $ ${event.price}</p>
                         <div class="card_button">
-                            <a href=${href} id="${event.name}" class="card_button_link" onclick="getDetails(${event.name})" value="${event.name}">View Detail</a>
+                            <a href=${href} id="${event.name}" class="card_button_link">View Detail</a>
                         </div>
                     </div>
                 </div>
             </div>`
 }
-// onclick="viewDetail(${event.name})"
 
+const mapCards = () => {
+    let cardContainer = document.querySelector('.cards_container')
+    actualEvents.map(event => {
+        cardContainer.insertAdjacentHTML("beforeend", card(event,actualHref))
+    })
+    cardContainer.insertAdjacentHTML("beforeend", noResultsRender())
+}
 
 // Function to render all the cards 
-const insertCard = (id,events,href) => {
-    let cardContainer = document.querySelector(id)
-    
-    while (cardContainer.firstChild) {
-        cardContainer.removeChild(cardContainer.firstChild)
-    }
+const filterCards = () => {
+    let cardContainer = document.querySelector('.cards_container')
+    let notFound = document.querySelector('.not_found_container')
+    let count = 0
 
-    let checkInput = event => {
+    let checkInput = (event,id) => {
         let start = event.name.toLowerCase().startsWith(Input.input.toLowerCase())
-        if (!Input.seted || start) return cardContainer.insertAdjacentHTML("beforeend", card(event,href))
+        if (!Input.seted || start) {
+            document.getElementById(id).classList.remove('hidden') 
+        }
+        else {
+            document.getElementById(id).classList.add('hidden')
+            count++
+        }
     }
     
     let checked = categories.some(category => category.checked == true)
-
-    events.map(event => {
-        if (!checked) return checkInput(event)
+    
+    actualEvents.map(event => {
+        let id = event.name.replace(" ","_")
+        if (!checked){
+            return checkInput(event,id)
+        }
         categories.map(category => {
-            category.name == event.category && category.checked ? checkInput(event) : null
+            if (category.name == event.category) {
+                if (category.checked) {
+                    checkInput(event,id)
+                }
+                else {
+                    document.getElementById(id).classList.add('hidden')
+                    count++
+                }
+            }
         })
     })
+
+    if (count == actualEvents.length) {
+        cardContainer.classList.add('cards_container_false')
+        cardContainer.classList.remove('cards_container_true')
+        notFound.classList.remove('hidden')
+    }
+    else {
+        cardContainer.classList.add('cards_container_true')
+        cardContainer.classList.remove('cards_container_false')
+        notFound.classList.add('hidden')
+    }
+}
+
+// Function to render the not found events
+const noResultsRender = () => {
+    return `<div class="animate__animated animate__zoomIn not_found_container hidden">
+                <img src="https://i.giphy.com/media/26AHs3p7U7H5MU2gU/200w.gif" alt="">
+                <div class="not_found_info_container">
+                    <p class="not_found">Event not found</p>
+                    <p class="not_found_description">Please try other search!</p>
+                </div>
+            </div>`
+}
+
+// Function to render the checkboxs, the cards and to add the events listeners
+const mainRender = (reRender,events,href) => {
+    reRender ? null : renderCategories()
+    actualEvents = events
+    actualHref = href
+    mapCards()
+    searchInput()
     linksListener()
 }
 
 // Function to render the pages
-const renderPage = (reRender) => {
-    // Check the page that we are in currently
+const renderPage = async (reRender) => {
     let URLactual = window.location.pathname.split('/').pop()
     
-    // Invoke the function to render the cards in the corresponding page
     switch (URLactual) {
-        case '': reRender ? null : renderCategories(), searchInput(), insertCard('#cards_container_home',data.eventos,'./pages/details.html'); break;
-        case 'index.html': reRender ? null : renderCategories(), searchInput(), insertCard('#cards_container_home',data.eventos,'./pages/details.html'); break;
-        case 'upcomingEvents.html': reRender ? null : renderCategories(), searchInput(), insertCard('#cards_container_upcoming',upcomingEvents,'../pages/details.html'); break;
-        case 'pastEvents.html':reRender ? null :  renderCategories(),insertCard('#cards_container_past',pastEvents,'../pages/details.html'); break;
-        case 'details.html': viewDetail();break;
+        case '': mainRender(reRender,data.eventos,'./pages/details.html'); break;
+        case 'index.html': mainRender(reRender,data.eventos,'./pages/details.html'); break;
+        case 'upcomingEvents.html': mainRender(reRender,upcomingEvents,'../pages/details.html'); break;
+        case 'pastEvents.html': mainRender(reRender,pastEvents,'../pages/details.html'); break;
+        case 'details.html': await viewDetail();break;
     }
 }
 
-
-const getDetails = (name) => {
-    console.log(name)
-    data.eventos.map(event => {
-        event.name == name ? details = event : null
-    })
-}
-
-const viewDetail = () => {
+const viewDetail = async () => {
+    let evento = JSON.parse(localStorage.getItem('myEvent'))
+    localStorage.clear()
     let detailContainer = document.getElementById('card_details')
-    detailContainer.insertAdjacentHTML("beforeend", detailCard())
+    detailContainer.insertAdjacentHTML("beforeend", detailCard(evento))
 }
 
-const detailCard = () => {
-    return `<img class="card_image" src="${details.image}" alt="${details.name}">
+const detailCard = (evento) => {
+    return `<img class="card_image" src="${evento.image}" alt="${evento.name}">
             <div class="detail_description">
-                <h5 class="card-title card_title">${details.name}</h5>
-                <p class="card-text">${details.description}</p>
+                <h5 class="card-title card_title">${evento.name}</h5>
+                <p class="card-text">${evento.description}</p>
             </div>`
 }
 

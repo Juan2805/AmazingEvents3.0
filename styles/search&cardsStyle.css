@@ -40,7 +40,7 @@
 
 /* CARDS ------------------------------------ */
 
-.cards_container {
+.cards_container_true {
     display: grid;
     grid-template-columns: 25% 25% 25% 25%;
     margin: 30px 0;
@@ -95,6 +95,37 @@
 
 .card_button_link {
     text-decoration: none;
+}
+
+/* NOT FOUND ------------------------------------------------ */
+
+.cards_container_false {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+.not_found_container {
+    margin: auto;
+    display: flex;
+}
+
+.not_found_info_container {
+    margin: auto;
+    text-align: center;
+}
+
+.not_found {
+    font-size: 3em;
+}
+
+.not_found_description {
+    font-size: 1.3em;
+}
+
+/* FILTER EVENTS ----------------------------------------------------------------------------------------------------------------- */
+
+.hidden {
+    display: none;
 }
 
 /* RESPONSIVE ---------------------------------------------------------------------------------------------------------------------*/
