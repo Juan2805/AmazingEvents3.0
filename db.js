@@ -161,7 +161,6 @@ const data = {
 const upcomingEvents = []
 const pastEvents = []
 const categories = []
-var details = {}
 var Input = {input: '', seted: false}
 var actualEvents
 var actualHref
@@ -207,14 +206,14 @@ const linksListener = () => {
     links.forEach(link => {
         link.addEventListener('click', () => {
             data.eventos.map(evento => {
-                evento.name == link.id ? localStorage.setItem('myEvent', JSON.stringify(evento)) : null //details = evento
+                evento.name == link.id ? localStorage.setItem('myEvent', JSON.stringify(evento)) : null
             })
         })
     })
 }
 
 // Functions of the checkboxs ------------------------------------------------------------------------------------------------------------
-// Render of the checkboxs
+// Render of the checkbox
 const categoryCheckbox = (category) => {
     return `<div class="category_search_checkbox_container">
                 <input class="category_search_checkbox" type="checkbox" name="category" id="${category.replace(' ','_')}" value="${category}">
@@ -233,7 +232,7 @@ const renderCategories = () => {
 }
 
 // Function of the cards -----------------------------------------------------------------------------------------------------------------
-// Render of the cards
+// Render of the card
 const card = (event,href) => {
     return `<div class="card" id="${event.name.replace(" ","_")}">
                 <img class="card-img-top card_img" src="${event.image}" alt="Card image cap">
@@ -252,20 +251,20 @@ const card = (event,href) => {
             </div>`
 }
 
+// Function to render all the cards
 const mapCards = () => {
     let cardContainer = document.querySelector('.cards_container')
     actualEvents.map(event => {
         cardContainer.insertAdjacentHTML("beforeend", card(event,actualHref))
     })
-    cardContainer.insertAdjacentHTML("beforeend", noResultsRender())
+    let eventNotFoundContainer = document.querySelector('.event_not_found_container')
+    eventNotFoundContainer.insertAdjacentHTML("beforeend", noResultsRender())
 }
 
 // Function to render all the cards 
 const filterCards = () => {
-    let cardContainer = document.querySelector('.cards_container')
-    let notFound = document.querySelector('.not_found_container')
     let count = 0
-
+    
     let checkInput = (event,id) => {
         let start = event.name.toLowerCase().startsWith(Input.input.toLowerCase())
         if (!Input.seted || start) {
@@ -297,16 +296,8 @@ const filterCards = () => {
         })
     })
 
-    if (count == actualEvents.length) {
-        cardContainer.classList.add('cards_container_false')
-        cardContainer.classList.remove('cards_container_true')
-        notFound.classList.remove('hidden')
-    }
-    else {
-        cardContainer.classList.add('cards_container_true')
-        cardContainer.classList.remove('cards_container_false')
-        notFound.classList.add('hidden')
-    }
+    let notFound = document.querySelector('.not_found_container')
+    count == actualEvents.length ? notFound.classList.remove('hidden') : notFound.classList.add('hidden')
 }
 
 // Function to render the not found events
@@ -343,18 +334,20 @@ const renderPage = async (reRender) => {
     }
 }
 
+// Get the event details from the localStorage 
 const viewDetail = async () => {
-    let evento = JSON.parse(localStorage.getItem('myEvent'))
+    let event = JSON.parse(localStorage.getItem('myEvent'))
     localStorage.clear()
     let detailContainer = document.getElementById('card_details')
-    detailContainer.insertAdjacentHTML("beforeend", detailCard(evento))
+    detailContainer.insertAdjacentHTML("beforeend", detailCard(event))
 }
 
-const detailCard = (evento) => {
-    return `<img class="card_image" src="${evento.image}" alt="${evento.name}">
+// Render of the details card
+const detailCard = (event) => {
+    return `<img class="card_image" src="${event.image}" alt="${event.name}">
             <div class="detail_description">
-                <h5 class="card-title card_title">${evento.name}</h5>
-                <p class="card-text">${evento.description}</p>
+                <h5 class="card-title card_title">${event.name}</h5>
+                <p class="card-text">${event.description}</p>
             </div>`
 }
 

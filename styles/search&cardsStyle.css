@@ -40,7 +40,7 @@
 
 /* CARDS ------------------------------------ */
 
-.cards_container_true {
+.cards_container {
     display: grid;
     grid-template-columns: 25% 25% 25% 25%;
     margin: 30px 0;
@@ -99,7 +99,7 @@
 
 /* NOT FOUND ------------------------------------------------ */
 
-.cards_container_false {
+.event_not_found_container {
     display: grid;
     grid-template-columns: 1fr;
 }
